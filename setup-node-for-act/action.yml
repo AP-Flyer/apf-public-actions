@@ -1,0 +1,15 @@
+name: APF - Setup Node.js for act
+description: Install Node.js in the job container before running JavaScript actions locally
+
+runs:
+  using: composite
+  steps:
+    - name: Install Node.js
+      if: ${{ env.ACT == 'true' }}
+      shell: bash
+      run: |
+        if ! command -v node > /dev/null 2>&1; then
+          apt-get update
+          apt-get install -y --no-install-recommends nodejs
+        fi
+        node --version
