@@ -1,0 +1,38 @@
+# APF-mod file.
+
+name: APF Setup private repository
+description: Configure a repository-specific SSH deploy key for HTTPS and SSH Git URLs
+
+inputs:
+  repository:
+    description: Repository URL (https://host/owner/repo.git or git@host:owner/repo.git)
+    required: true
+  ssh-key:
+    description: Private SSH deploy key for the repository
+    required: true
+  install-missing-dependencies:
+    description: Install missing commands using apt-get (requires root or passwordless sudo)
+    required: false
+    default: 'false'
+  reset-ssh-config:
+    description: Start with an empty temporary global Git configuration for repository SSH URL mappings
+    required: false
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    - name: Reset global Git configuration
+      if: ${{ inputs.reset-ssh-config == 'true' }}
+      shell: bash
+      run: |
+        config="$RUNNER_TEMP/private-repositories.config"
+        (umask 077; : > "$config")
+        echo "GIT_CONFIG_GLOBAL=$config" >> "$GITHUB_ENV"
+    - name: Configure repository SSH authorization
+      shell: bash
+      env:
+        PRIVATE_REPOSITORY_URL: ${{ inputs.repository }}
+        PRIVATE_REPOSITORY_SSH_KEY: ${{ inputs.ssh-key }}
+        PRIVATE_REPOSITORY_INSTALL_MISSING_DEPENDENCIES: ${{ inputs.install-missing-dependencies }}
+      run: bash "$GITHUB_ACTION_PATH/setup.sh"
